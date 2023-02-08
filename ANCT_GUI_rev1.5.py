@@ -196,12 +196,11 @@ class MyApp(QWidget):
 
     def update_image_limit_indefinite(self):
         if self.image_limit_indefinite_checkbox.isChecked():
-            self.image_limit_indefinite_checkbox.setChecked(False)
             self.image_limit_line_edit.setEnabled(False)
             self.image_limit_line_edit.setText("-1")
         else:
+            self.image_limit_line_edit.setText("0")
             self.image_limit_line_edit.setEnabled(True)
-            self.image_limit_indefinite_checkbox.setChecked(True)
 
     def capture_method(self):
         capture_method = self.capture_method_combo_box.currentText()
