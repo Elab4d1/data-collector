@@ -11,7 +11,6 @@ from pathlib import Path
 import pyautogui
 
 
-
 class CaptureThread(QThread):
     def __init__(self, parent, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads):
         QThread.__init__(self, parent)
@@ -68,8 +67,8 @@ class MyApp(QWidget):
         super().__init__(parent)
         self.capture_thread = CaptureThread(self,
                                             interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads)
-        self.q=queue.Queue()
-        self.gui=GUI(self.q)
+        self.q = queue.Queue()
+        self.gui = GUI(self.q)
         # Create a vertical layout to organize the widgets
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -102,7 +101,8 @@ class MyApp(QWidget):
 
         # Selection of the resolution / image size
         resolution_label = QLabel("Resolution:", self)
-        self.resolution= str(pyautogui.size()[0]) + "x" + str(pyautogui.size()[1])
+        self.resolution = str(
+            pyautogui.size()[0]) + "x" + str(pyautogui.size()[1])
         self.resolution_combo_box = QComboBox(self)
         self.resolution_combo_box.addItems(["1920x1080", "Random"])
         self.resolution_combo_box.currentIndexChanged.connect(
@@ -231,9 +231,10 @@ class MyApp(QWidget):
     def update_image_limit(self):
         image_limit = self.image_limit_line_edit.text()
         if self.image_limit_indefinite_checkbox.isChecked():
-            self.capture_thread.image_limit=(-1)
+            self.capture_thread.image_limit = (-1)
         else:
-            self.capture_thread.image_limit=int(image_limit)
+            self.capture_thread.image_limit = int(
+                image_limit) if image_limit else 0
 
     def load_weights(self):
         options = QFileDialog.Options()
@@ -282,13 +283,12 @@ if __name__ == '__main__':
     interval = 0.5
     directory_path = "captured_images"
     image_limit = 1000
-    path=str(Path.cwd())
     # default value, user can change this through GUI
-    cfg_path = path+'\\data-collector\\cfg\\yolov4-tiny-3l.cfg'
-    
+    cfg_path = 'cfg/yolov4-tiny-3l.cfg'
+
     # default value, user can change this through GUI
-    weights_path = path+"\\data-collector\\weights\\yolov4-tiny-3l.weights"
-    data_path = path+"\\data-collector\\data\\classes.txt"
+    weights_path = "weights/yolov4-tiny-3l.weights"
+    data_path = "data/classes.txt"
     num_threads = 4
     capture_thread = Test_ANCT.ScreenCapture(
         capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, threading)
