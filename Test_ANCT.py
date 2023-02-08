@@ -120,13 +120,16 @@ class ScreenCapture:
             self.image_queue.put((img_path, 0))
             self.processed_images_count += 1
             self.update_progress.emit(self.processed_images_count)
-
+            #added cap var so the release works
+            cap=cv2.VideoCapture(0)
             if self.interval > 0:
                 time.sleep(self.interval)
             cap.release()
             cv2.destroyAllWindows()
 
     def video_capture(self):
+        #added max_width and max_height
+        max_width, max_height = pyautogui.size()
         # Get list of all video files in directory
         videos = [f for f in os.listdir(
             self.directory_path) if f.endswith('.mp4')]
@@ -182,6 +185,7 @@ class ScreenCapture:
                     break
                 unique_filename = str(uuid.uuid4()) + ".jpg"
                 img_path = os.path.join(self.directory_path, unique_filename)
+                img=cv2.imread(img_path)
                 cv2.imwrite(img_path, img)
                 self.image_queue.put((img_path, 0))
                 self.processed_images_count += 1
@@ -193,6 +197,7 @@ class ScreenCapture:
                 cv2.destroyAllWindows()
 
     def screenshot_capture(self):
+        max_width, max_height = pyautogui.size()
         with mss.mss() as sct:
             while not self.stopped:
                 if self.processed_images_count >= self.image_limit:
@@ -336,7 +341,9 @@ class ScreenCapture:
         self.data_path = data_path
         with open(self.data_path, "r") as f:
             self.classes = [line.strip() for line in f.readlines()]
-
+        #Added paths values
+        new_path='path'
+        img_path='img_path'
             # Check if the directory of the new path exists, if not create it.
         if not os.path.exists(os.path.dirname(new_path)):
             os.makedirs(os.path.dirname(new_path))
