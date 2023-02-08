@@ -2,14 +2,13 @@ import Test_ANCT
 import random
 import subprocess
 import threading
-from PyQt5.QtCore import QThread, pyqtSignal, QEvent, QObject
+from PyQt5.QtCore import QThread, pyqtSignal, QEvent, QObject, pyqtSlot
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QFileDialog, QProgressBar, QComboBox, QLineEdit, QMessageBox, QVBoxLayout, QCheckBox
 import sys
 import queue
 from pathlib import Path
 import pyautogui
-
 
 
 class CaptureThread(QThread):
@@ -68,8 +67,8 @@ class MyApp(QWidget):
         super().__init__(parent)
         self.capture_thread = CaptureThread(self,
                                             interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads)
-        self.q=queue.Queue()
-        self.gui=GUI(self.q)
+        self.q = queue.Queue()
+        self.gui = GUI(self.q)
         # Create a vertical layout to organize the widgets
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -102,7 +101,8 @@ class MyApp(QWidget):
 
         # Selection of the resolution / image size
         resolution_label = QLabel("Resolution:", self)
-        self.resolution= str(pyautogui.size()[0]) + "x" + str(pyautogui.size()[1])
+        self.resolution = str(
+            pyautogui.size()[0]) + "x" + str(pyautogui.size()[1])
         self.resolution_combo_box = QComboBox(self)
         self.resolution_combo_box.addItems(["1920x1080", "Random"])
         self.resolution_combo_box.currentIndexChanged.connect(
@@ -127,7 +127,6 @@ class MyApp(QWidget):
 
         # Image limit indefinite check box
         self.image_limit_indefinite_checkbox = QCheckBox("Indefinite", self)
-        self.update_image_limit_indefinite = pyqtSignal(int)
         # what i need to pass to next function
         self.image_limit_indefinite_checkbox.stateChanged.connect(
             self.update_image_limit_indefinite)
@@ -182,6 +181,9 @@ class MyApp(QWidget):
     def update_capture_method(self, text):
         self.capture_method = text
         self.gui.update_variables(self.capture_method, self.resolution)
+
+    def update_image_limit_indefinite(self):
+        self.image_limit_indefinite = self.image_limit_indefinite_checkbox.isChecked()
 
     def update_performance(self):
         performance = self.performance_combo_box.currentText()
@@ -282,13 +284,12 @@ if __name__ == '__main__':
     interval = 0.5
     directory_path = "captured_images"
     image_limit = 1000
-    path=str(Path.cwd())
     # default value, user can change this through GUI
-    cfg_path = path+'\\data-collector\\cfg\\yolov4-tiny-3l.cfg'
-    
+    cfg_path = 'cfg/yolov4-tiny-3l.cfg'
+
     # default value, user can change this through GUI
-    weights_path = path+"\\data-collector\\weights\\yolov4-tiny-3l.weights"
-    data_path = path+"\\data-collector\\data\\classes.txt"
+    weights_path = "weights/yolov4-tiny-3l.weights"
+    data_path = "data/classes.txt"
     num_threads = 4
     capture_thread = Test_ANCT.ScreenCapture(
         capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, threading)
