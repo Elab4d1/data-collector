@@ -7,6 +7,8 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QFileDialog, QProgressBar, QComboBox, QLineEdit, QMessageBox, QVBoxLayout, QCheckBox
 import sys
 import queue
+from pathlib import Path
+
 
 
 class CaptureThread(QThread):
@@ -70,6 +72,7 @@ class MyApp(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.setWindowTitle("Oz's Advanced Network Collection Tool")
+        self.setGeometry(300, 300, 300, 200)
 
         self.capture_thread = CaptureThread(
             self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads)
@@ -276,11 +279,13 @@ if __name__ == '__main__':
     interval = 0.5
     directory_path = "captured_images"
     image_limit = 1000
+    path=str(Path.cwd())
     # default value, user can change this through GUI
-    cfg_path = "cfg/yolov4-tiny-3l.cfg"
+    cfg_path = path+'\\data-collector\\cfg\\yolov4-tiny-3l.cfg'
+    
     # default value, user can change this through GUI
-    weights_path = "weights/yolov4-tiny-3l.weights"
-    data_path = "data/classes.txt"
+    weights_path = path+"\\data-collector\\weights\\yolov4-tiny-3l.weights"
+    data_path = path+"\\data-collector\\data\\classes.txt"
     num_threads = 4
     capture_thread = Test_ANCT.ScreenCapture(
         capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, threading)
