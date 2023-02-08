@@ -248,7 +248,7 @@ class MyApp(QWidget):
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
         file_name, _ = QFileDialog.getOpenFileName(
-            self, "Select Weights File", "", "Weights Files (.weights);;All Files ()", options=options)
+            self, "Select Weights File", "", "Weights Files (*.weights);;All Files ()", options=options)
         if file_name:
             self.capture_thread.weights_path = file_name
 
@@ -256,7 +256,7 @@ class MyApp(QWidget):
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
         file_name, _ = QFileDialog.getOpenFileName(
-            self, "Select CFG File", "", "CFG Files (.cfg);;All Files ()", options=options)
+            self, "Select CFG File", "", "CFG Files (*.cfg);;All Files ()", options=options)
         if file_name:
             self.capture_thread.cfg_path = file_name
 
@@ -264,7 +264,7 @@ class MyApp(QWidget):
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
         file_name, _ = QFileDialog.getOpenFileName(
-            self, "Select Data File", "", "Data Files (.data);;All Files ()", options=options)
+            self, "Select Data File", "", "Data Files (*.txt);;All Files ()", options=options)
         if file_name:
             self.capture_thread.data_path = file_name
 
