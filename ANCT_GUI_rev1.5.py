@@ -1,18 +1,18 @@
-import Test_ANCT
-import random
-import subprocess
-import threading
-from PyQt5.QtCore import QThread, pyqtSignal, QEvent, QObject
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QFileDialog, QProgressBar, QComboBox, QLineEdit, QMessageBox, QVBoxLayout, QCheckBox
-import sys
 import queue
-from pathlib import Path
+import sys
+import threading
+
 import pyautogui
+from PyQt5.QtCore import QThread, QCoreApplication
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog,
+                             QLabel, QLineEdit, QPushButton, QVBoxLayout,
+                             QWidget)
+
+import Test_ANCT
 
 
 class CaptureThread(QThread):
-    def __init__(self, parent, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads):
+    def __init__(self, parent, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence):
         QThread.__init__(self, parent)
         super().__init__(parent)
         self.interval = interval
@@ -22,6 +22,7 @@ class CaptureThread(QThread):
         self.weights_path = weights_path
         self.data_path = data_path
         self.num_threads = num_threads
+        self.confidence = confidence
 
 
 app = QApplication(sys.argv)
@@ -66,7 +67,7 @@ class MyApp(QWidget):
     def __init__(self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, parent=None):
         super().__init__(parent)
         self.capture_thread = CaptureThread(self,
-                                            interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads)
+                                            interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads,confidence=0.5)
         self.q = queue.Queue()
         self.gui = GUI(self.q)
         # Create a vertical layout to organize the widgets
@@ -76,7 +77,7 @@ class MyApp(QWidget):
         self.setGeometry(300, 300, 300, 200)
 
         self.capture_thread = CaptureThread(
-            self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads)
+            self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence=0.5)
 
         # Performance selection
         performance_label = QLabel("Performance:", self)
@@ -150,6 +151,7 @@ class MyApp(QWidget):
 
         # Sorted image directory splitting location
         self.directory_button = QPushButton("Select Directory", self)
+        self.directory_button.move(190, 1)
         self.directory_button.clicked.connect(self.select_directory)
         layout.addWidget(self.data_button)
 
@@ -212,12 +214,12 @@ class MyApp(QWidget):
             self.screenshot_capture()
 
     def update_interval(self):
-        interval = int(self.interval_line_edit.text())
-        self.capture_thread.set_interval(interval)
+        interval = (self.interval_line_edit.text())
+        self.capture_thread.interval=int(interval) if (interval and interval.isdigit()) else 0
 
     def update_confidence(self):
         confidence = self.confidence_line_edit.text()
-        self.capture_thread.set_confidence(confidence)
+        self.capture_thread.confidence=float(confidence) if (confidence and confidence.isdigit()) else 0
 
     def update_resolution(self):
         resolution = self.resolution_combo_box.currentText()
@@ -242,7 +244,7 @@ class MyApp(QWidget):
             self.capture_thread.image_limit = (-1)
         else:
             self.capture_thread.image_limit = int(
-                image_limit) if image_limit else 0
+                image_limit) if (image_limit and image_limit.isdigit()) else 0
 
     def load_weights(self):
         options = QFileDialog.Options()
