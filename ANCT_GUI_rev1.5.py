@@ -127,7 +127,7 @@ class MyApp(QWidget):
 
         # Image limit indefinite check box
         self.image_limit_indefinite_checkbox = QCheckBox("Indefinite", self)
-        self.update_image_limit_indefinite = pyqtSignal(int)
+
         # what i need to pass to next function
         self.image_limit_indefinite_checkbox.stateChanged.connect(
             self.update_image_limit_indefinite)
@@ -193,6 +193,15 @@ class MyApp(QWidget):
             self.capture_thread.num_threads = 4
         else:
             self.capture_thread.num_threads = 8
+
+    def update_image_limit_indefinite(self):
+        if self.image_limit_indefinite_checkbox.isChecked():
+            self.image_limit_indefinite_checkbox.setChecked(False)
+            self.image_limit_line_edit.setEnabled(False)
+            self.image_limit_line_edit.setText("-1")
+        else:
+            self.image_limit_line_edit.setEnabled(True)
+            self.image_limit_indefinite_checkbox.setChecked(True)
 
     def capture_method(self):
         capture_method = self.capture_method_combo_box.currentText()
