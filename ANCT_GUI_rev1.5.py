@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QFileDia
 import sys
 import queue
 from pathlib import Path
+import pyautogui
 
 
 
@@ -67,7 +68,8 @@ class MyApp(QWidget):
         super().__init__(parent)
         self.capture_thread = CaptureThread(self,
                                             interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads)
-
+        self.q=queue.Queue()
+        self.gui=GUI(self.q)
         # Create a vertical layout to organize the widgets
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -100,6 +102,7 @@ class MyApp(QWidget):
 
         # Selection of the resolution / image size
         resolution_label = QLabel("Resolution:", self)
+        self.resolution= str(pyautogui.size()[0]) + "x" + str(pyautogui.size()[1])
         self.resolution_combo_box = QComboBox(self)
         self.resolution_combo_box.addItems(["1920x1080", "Random"])
         self.resolution_combo_box.currentIndexChanged.connect(
