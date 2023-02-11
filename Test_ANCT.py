@@ -31,6 +31,7 @@ class ScreenCapture:
             "Screenshot": self.screenshot_capture
         }
         self.capture_method = capture_method
+        self.processed_images_count = 0
         self.interval = interval
         self.directory_path = directory_path
         self.image_limit = image_limit
