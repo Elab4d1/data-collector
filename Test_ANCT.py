@@ -31,7 +31,6 @@ class ScreenCapture:
             "Screenshot": self.screenshot_capture
         }
         self.capture_method = capture_method
-        print(f"Capture method: {capture_method}")
         self.interval = interval
         self.directory_path = directory_path
         self.image_limit = image_limit
@@ -42,12 +41,10 @@ class ScreenCapture:
         self.stopped = False
         self.image_queue = queue.Queue()
         self.num_threads = num_threads
-        self.process_thread = Thread(target=self.process_images)
-        self.process_thread.start()
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.cfg_path = os.path.join(current_dir, "cfg/yolov4.cfg")
-        if not os.path.exists(self.directory_path):
-            os.makedirs(self.directory_path)
+        if not os.path.exists("target"):
+            os.makedirs("target")
         if not os.path.exists(cfg_path):
             print(f"cfg_path does not exist: {cfg_path}")
         self.weights_path = os.path.join(
@@ -67,12 +64,10 @@ class ScreenCapture:
                               for i in self.net.getUnconnectedOutLayers()]
 
     def run(self):
-        print('run')
         self.screenshot_capture()
         # self.capture_methods[self.capture_method]()
 
     def start(self):
-        print('start')
         thread = Thread(target=self.run)
         thread.start()
 
@@ -210,10 +205,10 @@ class ScreenCapture:
                 cv2.destroyAllWindows()
 
     def screenshot_capture(self):
-        print('screenshot_capture')
         model = cv2.dnn_DetectionModel(self.net)
         model.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
-        while not self.stopped:
+        while not self.stopped and self.processed_images_count < self.image_limit:
+            self.processed_images_count += 1
             myScreenshot = pyautogui.screenshot()
             img = cv2.cvtColor(np.array(myScreenshot), cv2.COLOR_RGB2BGR)
             classIds, scores, boxes = model.detect(
@@ -239,32 +234,6 @@ class ScreenCapture:
                 cv2.imwrite(os.path.join(
                     path, self.directory_path, self.classes[classId][:-1], str(uuid.uuid4())+'.jpg'), nimg)
                 time.sleep(self.interval)
-
-    def process_images(self):
-        with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
-            while True:
-                if self.stopped and self.image_queue.empty():
-                    print("Image queue is empty.")
-                    break
-                while not self.stopped:
-                    self.lock.acquire()
-                    try:
-                        if not self.image_queue.empty():
-                            img_path = self.image_queue.get()
-                            img = cv2.imread(img_path)
-                            blob = cv2.dnn.blobFromImage(
-                                img, 1.0/255.0, (16, 16), swapRB=True, crop=False)
-                            self.net.setInput(blob)
-                            detections = self.net.forward()
-                            for i in np.arange(0, detections.shape[2]):
-                                confidence = detections[0, 0, i, 2]
-                                if confidence > 0.1:
-                                    class_id = int(detections[0, 0, i, 1])
-                                    class_name = self.classes[class_id]
-                                    print("Detected class: ", class_name)
-                                    self.process_sort(img_path, class_name)
-                    finally:
-                        self.lock.release()
 
     def process_sort(self, img_path, percentage):
         new_path = None

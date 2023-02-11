@@ -75,7 +75,6 @@ class MyApp(QWidget):
         self.num_threads = num_threads
         self.capture_method = capture_method
         self.confidence = confidence
-        print(f"Capture method: {capture_method}")
 
         self.capture_thread = Test_ANCT.ScreenCapture(self.capture_method, self.interval, self.directory_path, self.image_limit,
                                                       self.cfg_path, self.weights_path, self.data_path, self.num_threads,  self.confidence)
@@ -129,7 +128,7 @@ class MyApp(QWidget):
 
         # Image limit input box
         image_limit_label = QLabel("Image Limit:", self)
-        self.image_limit_line_edit = QLineEdit("0", self)
+        self.image_limit_line_edit = QLineEdit("1000", self)
         self.image_limit_line_edit.textChanged.connect(self.update_image_limit)
         layout.addWidget(image_limit_label)
         layout.addWidget(self.image_limit_line_edit)
@@ -295,7 +294,7 @@ class MyApp(QWidget):
         self.stop_button.setEnabled(True)
 
     def stop(self):
-        self.capture_thread.stopped = True
+        self.capture_thread.stop()
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
 
@@ -303,6 +302,6 @@ class MyApp(QWidget):
 if __name__ == '__main__':
 
     my_app = MyApp(1, "target", 1000,
-                   "cfg/yolov4.cfg", "weights/yolov4.weights", "data/classes.names", 4, "Screenshot", 0.6)
+                   "cfg/yolov4.cfg", "weights/yolov4.weights", "data/classes.names", 1, "Screenshot", 0.6)
     app.exec_()
     sys.exit(app.exec_())
