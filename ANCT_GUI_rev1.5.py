@@ -276,6 +276,7 @@ class MyApp(QWidget):
 
     def start(self):
         self.capture_thread.stopped = False
+
         self.capture_thread.start()
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
@@ -289,14 +290,14 @@ class MyApp(QWidget):
 if __name__ == '__main__':
     capture_method = "Detection"
     interval = 0.5
-    directory_path = "captured_images"
+    directory_path = "images"
     image_limit = 1000
     # default value, user can change this through GUI
-    cfg_path = 'cfg/yolov4-tiny-3l.cfg'
+    cfg_path = 'cfg/yolov4.cfg'
 
     # default value, user can change this through GUI
-    weights_path = "weights/yolov4-tiny-3l.weights"
-    data_path = "data/classes.txt"
+    weights_path = "weights/yolov4.weights"
+    data_path = "data/classes.names"
     num_threads = 4
     capture_thread = Test_ANCT.ScreenCapture(
         capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, threading)

@@ -41,14 +41,14 @@ class ScreenCapture:
         self.process_thread = Thread(target=self.process_images)
         self.process_thread.start()
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.cfg_path = os.path.join(current_dir, "cfg/yolov4-tiny-3l.cfg")
+        self.cfg_path = os.path.join(current_dir, "cfg/yolov4.cfg")
         if not os.path.exists(cfg_path):
             print(f"cfg_path does not exist: {cfg_path}")
         self.weights_path = os.path.join(
-            current_dir, "weights/yolov4-tiny-3l.weights")
+            current_dir, "weights/yolov4.weights")
         if not os.path.exists(weights_path):
             print(f"weights_path does not exist: {weights_path}")
-        self.data_path = os.path.join(current_dir, "data/classes.txt")
+        self.data_path = os.path.join(current_dir, "data/classes.names")
         if not os.path.exists(data_path):
             print(f"data_path does not exist: {data_path}")
         self.net = cv2.dnn.readNet(self.cfg_path, self.weights_path)
@@ -90,12 +90,16 @@ class ScreenCapture:
                 width, height = 250, 250
 
             screen = np.array(cv2.VideoCapture(0).read()[1])
-            img = screen[y:y+height, x:x+width]
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            mobileNetSSDImgSize = (416, 416)
+            img = cv2.resize(screen, mobileNetSSDImgSize)
+            cv2.imshow("Resized image", img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
             blob = cv2.dnn.blobFromImage(
-                img, 1.0/255.0, (16, 16), swapRB=True, crop=False)
+                img, 1.0/255.0, mobileNetSSDImgSize, swapRB=True, crop=False)
             self.net.setInput(blob)
             detections = self.net.forward()
+            print(detections.shape)
             for i in np.arange(0, detections.shape[2]):
                 confidence = detections[0, 0, i, 2]
                 if confidence > 0.1:
@@ -120,15 +124,15 @@ class ScreenCapture:
             self.image_queue.put((img_path, 0))
             self.processed_images_count += 1
             self.update_progress.emit(self.processed_images_count)
-            #added cap var so the release works
-            cap=cv2.VideoCapture(0)
+            # added cap var so the release works
+            cap = cv2.VideoCapture(0)
             if self.interval > 0:
                 time.sleep(self.interval)
             cap.release()
             cv2.destroyAllWindows()
 
     def video_capture(self):
-        #added max_width and max_height
+        # added max_width and max_height
         max_width, max_height = pyautogui.size()
         # Get list of all video files in directory
         videos = [f for f in os.listdir(
@@ -185,7 +189,7 @@ class ScreenCapture:
                     break
                 unique_filename = str(uuid.uuid4()) + ".jpg"
                 img_path = os.path.join(self.directory_path, unique_filename)
-                img=cv2.imread(img_path)
+                img = cv2.imread(img_path)
                 cv2.imwrite(img_path, img)
                 self.image_queue.put((img_path, 0))
                 self.processed_images_count += 1
@@ -341,10 +345,10 @@ class ScreenCapture:
         self.data_path = data_path
         with open(self.data_path, "r") as f:
             self.classes = [line.strip() for line in f.readlines()]
-        #Added paths values
-        new_path='path'
-        img_path='img_path'
-            # Check if the directory of the new path exists, if not create it.
+        # Added paths values
+        new_path = 'path'
+        img_path = 'img_path'
+        # Check if the directory of the new path exists, if not create it.
         if not os.path.exists(os.path.dirname(new_path)):
             os.makedirs(os.path.dirname(new_path))
             shutil.move(img_path, new_path)
