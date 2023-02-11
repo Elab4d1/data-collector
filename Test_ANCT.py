@@ -13,6 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 import shutil
 import threading
 
+path = os.getcwd()
+
 
 class CaptureThread(QThread):
     processed_images_count = 0
@@ -20,18 +22,20 @@ class CaptureThread(QThread):
 
 
 class ScreenCapture:
-    def __init__(self, capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, threading):
+    def __init__(self, capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence):
         super().__init__()
         self.lock = threading.Lock()
         self.capture_methods = {
             "Detection": self.detection_capture,
             "Video": self.video_capture,
-            "ScreenShot": self.screenshot_capture
+            "Screenshot": self.screenshot_capture
         }
         self.capture_method = capture_method
+        print(f"Capture method: {capture_method}")
         self.interval = interval
         self.directory_path = directory_path
         self.image_limit = image_limit
+        self.confidence = confidence
         self.size = (1920, 1080)
         self.random_size = (250, 1920, 1080)
         self.location = (0, 0)
@@ -42,6 +46,8 @@ class ScreenCapture:
         self.process_thread.start()
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.cfg_path = os.path.join(current_dir, "cfg/yolov4.cfg")
+        if not os.path.exists(self.directory_path):
+            os.makedirs(self.directory_path)
         if not os.path.exists(cfg_path):
             print(f"cfg_path does not exist: {cfg_path}")
         self.weights_path = os.path.join(
@@ -54,16 +60,19 @@ class ScreenCapture:
         self.net = cv2.dnn.readNet(self.cfg_path, self.weights_path)
         self.classes = None
         with open(self.data_path, "r") as f:
-            self.classes = [line.strip() for line in f.readlines()]
+            self.classes = f.readlines()
             self.layer_names = self.net.getLayerNames()
 
         self.output_layers = [self.layer_names[i - 1]
                               for i in self.net.getUnconnectedOutLayers()]
 
     def run(self):
-        self.capture_methods[self.capture_method]()
+        print('run')
+        self.screenshot_capture()
+        # self.capture_methods[self.capture_method]()
 
     def start(self):
+        print('start')
         thread = Thread(target=self.run)
         thread.start()
 
@@ -201,62 +210,35 @@ class ScreenCapture:
                 cv2.destroyAllWindows()
 
     def screenshot_capture(self):
-        max_width, max_height = pyautogui.size()
-        with mss.mss() as sct:
-            while not self.stopped:
-                if self.processed_images_count >= self.image_limit:
-                    self.stopped = True
-                    # Show alert or dialog box
-                    break
-                width, height = None, None
-                x, y = None, None
-                if self.size == "Random":
-                    width = random.randint(self.random_size[0], min(
-                        self.random_size[1], max_width))
-                    height = random.randint(self.random_size[0], min(
-                        self.random_size[2], max_height))
-                    x = random.randint(0, max_width - width)
-                    y = random.randint(0, max_height - height)
-                else:
-                    if self.size and self.location:
-                        width, height = self.size
-                        x, y = self.location
-                    else:
-                        # show alert or dialog box
-                        break
-                if width < 250 or height < 250:
-                    width, height = 250, 250
+        print('screenshot_capture')
+        model = cv2.dnn_DetectionModel(self.net)
+        model.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
+        while not self.stopped:
+            myScreenshot = pyautogui.screenshot()
+            img = cv2.cvtColor(np.array(myScreenshot), cv2.COLOR_RGB2BGR)
+            classIds, scores, boxes = model.detect(
+                img, confThreshold=self.confidence, nmsThreshold=0.4)
+            uniclass = set(classIds)
+            for cls in uniclass:
+                print(os.path.join(
+                    path, self.directory_path, self.classes[cls][:-1]))
+                if not os.path.exists(os.path.join(path, self.directory_path, self.classes[cls][:-1])):
+                    os.mkdir(os.path.join(
+                        path, self.directory_path, self.classes[cls][:-1]))
+            for (classId, score, box) in zip(classIds, scores, boxes):
 
-                sct.get_pixels(
-                    sct.monitors[1], width=width, height=height, x=x, y=y)
-                img = np.array(sct.image)
-                img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-                blob = cv2.dnn.blobFromImage(
-                    img, 1.0/255.0, (16, 16), swapRB=True, crop=False)
-                self.net.setInput(blob)
-                detections = self.net.forward()
-                for i in np.arange(0, detections.shape[2]):
-                    confidence = detections[0, 0, i, 2]
-                    if confidence > 0.1:
-                        idx = int(detections[0, 0, i, 1])
-                        x = int(detections[0, 0, i, 3] * img.shape[1])
-                        y = int(detections[0, 0, i, 4] * img.shape[0])
-                        w = int(detections[0, 0, i, 5] * img.shape[1])
-                        h = int(detections[0, 0, i, 6] * img.shape[0])
-                        if self.classes:
-                            label = self.classes[idx]
-                            cv2.rectangle(
-                                img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                unique_filename = str(uuid.uuid4()) + ".jpg"
-                img_path = os.path.join(self.directory_path, unique_filename)
-                cv2.imwrite(img_path, img)
-                self.image_queue.put((img_path, 0))
-                self.processed_images_count += 1
-                self.update_progress.emit(self.processed_images_count)
+                img = cv2.cvtColor(np.array(myScreenshot),
+                                   cv2.COLOR_RGB2BGR)
+                # cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),
+                #               color=(0, 255, 0), thickness=2)
 
-                if self.interval > 0:
-                    time.sleep(self.interval)
-                    # Show alert or dialog box
+                nimg = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
+                text = '%s: %.2f' % (self.classes[classId], score)
+                cv2.putText(img, text, (box[0]+17, box[1]+17), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            color=(0, 255, 0), thickness=2)
+                cv2.imwrite(os.path.join(
+                    path, self.directory_path, self.classes[classId][:-1], str(uuid.uuid4())+'.jpg'), nimg)
+                time.sleep(self.interval)
 
     def process_images(self):
         with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
@@ -312,50 +294,6 @@ class ScreenCapture:
                 os.makedirs("Manual_Review")
             new_path = f"Manual_Review/{str(uuid.uuid4())}.jpg"
         shutil.move(img_path, new_path)
-
-    def update_capture_method(self):
-        capture_method = self.capture_method_combo_box.currentText()
-        self.capture_thread.set_capture_method(capture_method)
-
-    def update_performance(self):
-        performance = self.performance_combo_box.currentText()
-        self.capture_thread.set_performance(performance)
-
-    def update_interval(self):
-        interval = self.interval_line_edit.text()
-        self.capture_thread.interval = interval
-
-    def update_image_limit(self):
-        image_limit = self.image_limit_line_edit.text()
-        self.capture_thread.image_limit = image_limit
-
-    def update_confidence(self):
-        confidence = self.confidence_line_edit.text()
-        self.capture_thread.confidence = confidence
-
-    def load_weights(self, weights_path):
-        self.weights_path = weights_path
-        self.net = cv2.dnn.readNet(self.model_path, self.weights_path)
-
-    def load_cfg(self, cfg_path):
-        self.cfg_path = cfg_path
-        self.net = cv2.dnn.readNet(self.cfg_path, self.config_path)
-
-    def load_data(self, data_path):
-        self.data_path = data_path
-        with open(self.data_path, "r") as f:
-            self.classes = [line.strip() for line in f.readlines()]
-        # Added paths values
-        new_path = 'path'
-        img_path = 'img_path'
-        # Check if the directory of the new path exists, if not create it.
-        if not os.path.exists(os.path.dirname(new_path)):
-            os.makedirs(os.path.dirname(new_path))
-            shutil.move(img_path, new_path)
-            shutil.move(img_path + ".txt", new_path + ".txt")
-            self.processed_images_count += 1
-            self.update_progress.emit(self.processed_images_count)
-            self.lock.release()
 
     def stop(self):
         self.stopped = True

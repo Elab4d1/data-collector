@@ -3,20 +3,20 @@ import os
 import pyautogui
 import time
 import numpy as np
+import uuid
 
-classes = open('classes.names')
+classes = open('data/classes.names')
 content = classes.readlines()
-path = os. getcwd()
+path = os.getcwd()
 interval = 1
-j, i = 0, 0
-with open('classes.names', 'r') as f:
+i = 0
+with open('data/classes.names', 'r') as f:
     classes = f.read().splitlines()
-net = cv2.dnn
-net = cv2.dnn.readNetFromDarknet('yolov4.cfg', 'yolov4.weights')
+
+net = cv2.dnn.readNet('cfg/yolov4.cfg', 'weights/yolov4.weights')
 model = cv2.dnn_DetectionModel(net)
 model.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
 while True:
-    j = j+1
     myScreenshot = pyautogui.screenshot()
     img = cv2.cvtColor(np.array(myScreenshot),
                        cv2.COLOR_RGB2BGR)
@@ -38,5 +38,5 @@ while True:
         cv2.putText(img, text, (box[0]+17, box[1]+17), cv2.FONT_HERSHEY_SIMPLEX, 1,
                     color=(0, 255, 0), thickness=2)
         cv2.imwrite(os.path.join(
-            path+'\\'+content[classId][:-1], content[classId][:-1]+str(i)+'.jpg'), nimg)
+            path+'\\'+content[classId][:-1], str(uuid.uuid4())+'.jpg'), nimg)
         time.sleep(interval)

@@ -64,10 +64,21 @@ thread.start()
 
 
 class MyApp(QWidget):
-    def __init__(self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, parent=None):
+    def __init__(self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, capture_method, confidence, parent=None):
         super().__init__(parent)
-        self.capture_thread = CaptureThread(self,
-                                            interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads,confidence=0.5)
+        self.interval = interval
+        self.directory_path = directory_path
+        self.image_limit = image_limit
+        self.cfg_path = cfg_path
+        self.weights_path = weights_path
+        self.data_path = data_path
+        self.num_threads = num_threads
+        self.capture_method = capture_method
+        self.confidence = confidence
+        print(f"Capture method: {capture_method}")
+
+        self.capture_thread = Test_ANCT.ScreenCapture(self.capture_method, self.interval, self.directory_path, self.image_limit,
+                                                      self.cfg_path, self.weights_path, self.data_path, self.num_threads,  self.confidence)
         self.q = queue.Queue()
         self.gui = GUI(self.q)
         # Create a vertical layout to organize the widgets
@@ -75,9 +86,6 @@ class MyApp(QWidget):
         self.setLayout(layout)
         self.setWindowTitle("Oz's Advanced Network Collection Tool")
         self.setGeometry(300, 300, 300, 200)
-
-        self.capture_thread = CaptureThread(
-            self, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence=0.5)
 
         # Performance selection
         performance_label = QLabel("Performance:", self)
@@ -94,7 +102,7 @@ class MyApp(QWidget):
         capture_method_label = QLabel("Capture Method:", self)
         self.capture_method_combo_box = QComboBox(self)
         self.capture_method_combo_box.addItems(
-            ["Detection", "Video", "Screenshot"])
+            ["Screenshot", "Detection", "Video"])
         self.capture_method_combo_box.currentIndexChanged.connect(
             self.update_capture_method)
         layout.addWidget(capture_method_label)
@@ -183,6 +191,7 @@ class MyApp(QWidget):
 
     def update_capture_method(self, text):
         self.capture_method = text
+        self.capture_thread.capture_method = text
         self.gui.update_variables(self.capture_method, self.resolution)
 
     def update_performance(self):
@@ -207,19 +216,21 @@ class MyApp(QWidget):
     def capture_method(self):
         capture_method = self.capture_method_combo_box.currentText()
         if self.capture_method == "Detection":
-            self.detection_capture()
+            self.capture_thread.detection_capture()
         elif self.capture_method == "Video":
-            self.video_capture()
+            self.capture_thread.video_capture()
         elif self.capture_method == "Screenshot":
-            self.screenshot_capture()
+            self.capture_thread.screenshot_capture()
 
     def update_interval(self):
         interval = (self.interval_line_edit.text())
-        self.capture_thread.interval=int(interval) if (interval and interval.isdigit()) else 0
+        self.capture_thread.interval = int(interval) if (
+            interval and interval.isdigit()) else 0
 
     def update_confidence(self):
         confidence = self.confidence_line_edit.text()
-        self.capture_thread.confidence=float(confidence) if (confidence and confidence.isdigit()) else 0
+        self.capture_thread.confidence = float(confidence) if (
+            confidence and confidence.isdigit()) else 0
 
     def update_resolution(self):
         resolution = self.resolution_combo_box.currentText()
@@ -290,21 +301,8 @@ class MyApp(QWidget):
 
 
 if __name__ == '__main__':
-    capture_method = "Detection"
-    interval = 0.5
-    directory_path = "images"
-    image_limit = 1000
-    # default value, user can change this through GUI
-    cfg_path = 'cfg/yolov4.cfg'
 
-    # default value, user can change this through GUI
-    weights_path = "weights/yolov4.weights"
-    data_path = "data/classes.names"
-    num_threads = 4
-    capture_thread = Test_ANCT.ScreenCapture(
-        capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, threading)
-    capture_thread.start()
-    my_app = MyApp(capture_thread.interval, capture_thread.directory_path, capture_thread.image_limit,
-                   capture_thread.cfg_path, capture_thread.weights_path, capture_thread.data_path, capture_thread.num_threads)
+    my_app = MyApp(1, "target", 1000,
+                   "cfg/yolov4.cfg", "weights/yolov4.weights", "data/classes.names", 4, "Screenshot", 0.6)
     app.exec_()
     sys.exit(app.exec_())
