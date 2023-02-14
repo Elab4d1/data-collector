@@ -31,13 +31,9 @@ for filename in os.listdir(directory):
                     os.mkdir(content[cls][:-1])
             for (classId, score, box) in zip(classIds, scores, boxes):
                 i = i+1
-                # cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),
-                #               color=(0, 255, 0), thickness=2)
 
                 nimg = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
                 text = '%s: %.2f' % (classes[classId], score)
-                # cv2.putText(img, text, (box[0]+17, box[1]+17), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                #             color=(0, 255, 0), thickness=2)
                 cv2.imwrite(os.path.join(
                     path+'\\'+content[classId][:-1], content[classId][:-1]+str(i)+'.jpg'), nimg)
             success, img = cap.read()

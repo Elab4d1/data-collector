@@ -101,7 +101,7 @@ class MyApp(QWidget):
         capture_method_label = QLabel("Capture Method:", self)
         self.capture_method_combo_box = QComboBox(self)
         self.capture_method_combo_box.addItems(
-            ["Screenshot", "Detection", "Video"])
+            ["Detection", "Screenshot", "Video"])
         self.capture_method_combo_box.currentIndexChanged.connect(
             self.update_capture_method)
         layout.addWidget(capture_method_label)
@@ -188,9 +188,10 @@ class MyApp(QWidget):
 
         self.show()
 
-    def update_capture_method(self, text):
-        self.capture_method = text
-        self.capture_thread.capture_method = text
+    def update_capture_method(self, index):
+        print("Capture method changed to: " + str(index) + "' hh")
+        self.capture_method = int(index)
+        self.capture_thread.capture_method = int(index)
         self.gui.update_variables(self.capture_method, self.resolution)
 
     def update_performance(self):

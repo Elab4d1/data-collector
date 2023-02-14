@@ -25,11 +25,11 @@ class ScreenCapture:
     def __init__(self, capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence):
         super().__init__()
         self.lock = threading.Lock()
-        self.capture_methods = {
-            "Detection": self.detection_capture,
-            "Video": self.video_capture,
-            "Screenshot": self.screenshot_capture
-        }
+        self.capture_methods = [
+            self.detection_capture,
+            self.screenshot_capture,
+            self.video_capture,
+        ]
         self.capture_method = capture_method
         self.processed_images_count = 0
         self.interval = interval
@@ -65,8 +65,7 @@ class ScreenCapture:
                               for i in self.net.getUnconnectedOutLayers()]
 
     def run(self):
-        self.screenshot_capture()
-        # self.capture_methods[self.capture_method]()
+        self.capture_methods[self.capture_method]()
 
     def start(self):
         thread = Thread(target=self.run)
@@ -137,73 +136,38 @@ class ScreenCapture:
             cv2.destroyAllWindows()
 
     def video_capture(self):
-        # added max_width and max_height
-        max_width, max_height = pyautogui.size()
-        # Get list of all video files in directory
+        model = cv2.dnn_DetectionModel(self.net)
+        model.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
+        count = 0
+
         videos = [f for f in os.listdir(
             self.directory_path) if f.endswith('.mp4')]
         for video in videos:
-            cap = cv2.VideoCapture(os.path.join(self.directory_path, video))
-            while True:
-                if self.stopped:
-                    break
-                if self.processed_images_count >= self.image_limit:
-                    self.stopped = True
-                    # Show alert or dialog box
-                    break
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                    # Run the object detector on the frame
-                width, height = None, None
-                x, y = None, None
-                if self.size == "Random":
-                    width = random.randint(self.random_size[0], min(
-                        self.random_size[1], max_width))
-                    height = random.randint(self.random_size[0], min(
-                        self.random_size[2], max_height))
-                    x = random.randint(0, max_width - width)
-                    y = random.randint(0, max_height - height)
-                else:
-                    width, height = self.size
-                    x, y = self.location
+            f = os.path.join(self.directory_path, video)
+            # checking if it is a file
+            if os.path.isfile(f):
+                cap = cv2.VideoCapture(f)
+                success, img = cap.read()
+                while success:
+                    cap.set(cv2.CAP_PROP_POS_MSEC, (count*self.interval*1000))
+                    classIds, scores, boxes = model.detect(
+                        img, confThreshold=0.6, nmsThreshold=0.4)
+                    uniclass = set(classIds)
+                    for cls in uniclass:
+                        if not os.path.exists(os.path.join(
+                                path, "target", self.classes[cls][:-1])):
+                            os.mkdir(os.path.join(
+                                path, "target", self.classes[cls][:-1]))
+                    for (classId, score, box) in zip(classIds, scores, boxes):
 
-                if width < 250 or height < 250:
-                    width, height = 250, 250
-                frame = frame[y:y+height, x:x+width]
-                blob = cv2.dnn.blobFromImage(
-                    frame, 1.0/255.0, (16, 16), swapRB=True, crop=False)
-                self.net.setInput(blob)
-                detections = self.net.forward()
-                for i in np.arange(0, detections.shape[2]):
-                    confidence = detections[0, 0, i, 2]
-                    if confidence > 0.1:
-                        idx = int(detections[0, 0, i, 1])
-                        x = int(detections[0, 0, i, 3] * frame.shape[1])
-                        y = int(detections[0, 0, i, 4] * frame.shape[0])
-                        w = int(detections[0, 0, i, 5] * frame.shape[1])
-                        h = int(detections[0, 0, i, 6] * frame.shape[0])
-                        if self.classes:
-                            label = self.classes[idx]
-                            cv2.rectangle(
-                                frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                            cv2.putText(
-                                frame, label, (x, y - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                cv2.imshow("Video", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                unique_filename = str(uuid.uuid4()) + ".jpg"
-                img_path = os.path.join(self.directory_path, unique_filename)
-                img = cv2.imread(img_path)
-                cv2.imwrite(img_path, img)
-                self.image_queue.put((img_path, 0))
-                self.processed_images_count += 1
-                self.update_progress.emit(self.processed_images_count)
-
-                if self.interval > 0:
-                    time.sleep(self.interval)
+                        nimg = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2]]
+                        text = '%s: %.2f' % (self.classes[classId], score)
+                        cv2.imwrite(os.path.join(
+                            path, "target", self.classes[classId][:-1], self.classes[classId][:-1]+str(uuid.uuid4())+'.jpg'), nimg)
+                    success, img = cap.read()
+                    count += 1
                 cap.release()
-                cv2.destroyAllWindows()
+            pass
 
     def screenshot_capture(self):
         model = cv2.dnn_DetectionModel(self.net)
