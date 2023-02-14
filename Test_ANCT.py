@@ -145,10 +145,13 @@ class ScreenCapture:
         for video in videos:
             f = os.path.join(self.directory_path, video)
             # checking if it is a file
+
             if os.path.isfile(f):
                 cap = cv2.VideoCapture(f)
                 success, img = cap.read()
                 while success:
+                    if self.stopped:  # if stop is pressed
+                        return
                     cap.set(cv2.CAP_PROP_POS_MSEC, (count*self.interval*1000))
                     classIds, scores, boxes = model.detect(
                         img, confThreshold=0.6, nmsThreshold=0.4)
