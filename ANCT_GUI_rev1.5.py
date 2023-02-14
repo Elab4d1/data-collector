@@ -102,7 +102,7 @@ class MyApp(QWidget):
         capture_method_label = QLabel("Capture Method:", self)
         self.capture_method_combo_box = QComboBox(self)
         self.capture_method_combo_box.addItems(
-            ["Detection", "Screenshot", "Video"])
+            ["Screenshot", "Video", "Detection"])
         self.capture_method_combo_box.currentIndexChanged.connect(
             self.update_capture_method)
         layout.addWidget(capture_method_label)
@@ -190,7 +190,7 @@ class MyApp(QWidget):
         self.show()
 
     def update_capture_method(self, index):
-        print("Capture method changed to: " + str(index) + "' hh")
+
         self.capture_method = int(index)
         self.capture_thread.capture_method = int(index)
         self.gui.update_variables(self.capture_method, self.resolution)
@@ -304,6 +304,6 @@ class MyApp(QWidget):
 if __name__ == '__main__':
 
     my_app = MyApp(1, "target", 1000,
-                   "cfg/yolov4.cfg", "weights/yolov4.weights", "data/classes.names", 1, "Screenshot", 0.6)
+                   "cfg/yolov4.cfg", "weights/yolov4.weights", "data/classes.names", 1, 0, 0.6)
     app.exec_()
     sys.exit(app.exec_())

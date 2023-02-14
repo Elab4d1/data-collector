@@ -26,9 +26,9 @@ class ScreenCapture:
         super().__init__()
         self.lock = threading.Lock()
         self.capture_methods = [
-            self.detection_capture,
             self.screenshot_capture,
             self.video_capture,
+            self.detection_capture,
         ]
         self.capture_method = capture_method
         self.processed_images_count = 0
@@ -106,7 +106,7 @@ class ScreenCapture:
                 img, 1.0/255.0, mobileNetSSDImgSize, swapRB=True, crop=False)
             self.net.setInput(blob)
             detections = self.net.forward()
-            print(detections.shape)
+
             for i in np.arange(0, detections.shape[2]):
                 confidence = detections[0, 0, i, 2]
                 if confidence > 0.1:
@@ -186,8 +186,7 @@ class ScreenCapture:
                 img, confThreshold=self.confidence, nmsThreshold=0.4)
             uniclass = set(classIds)
             for cls in uniclass:
-                print(os.path.join(
-                    path, self.directory_path, self.classes[cls][:-1]))
+
                 if not os.path.exists(os.path.join(path, self.directory_path, self.classes[cls][:-1])):
                     os.mkdir(os.path.join(
                         path, self.directory_path, self.classes[cls][:-1]))
