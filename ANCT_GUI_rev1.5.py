@@ -75,9 +75,10 @@ class MyApp(QWidget):
         self.num_threads = num_threads
         self.capture_method = capture_method
         self.confidence = confidence
+        self.videos_directory_path = "videos"
 
         self.capture_thread = Test_ANCT.ScreenCapture(self.capture_method, self.interval, self.directory_path, self.image_limit,
-                                                      self.cfg_path, self.weights_path, self.data_path, self.num_threads,  self.confidence)
+                                                      self.cfg_path, self.weights_path, self.data_path, self.num_threads,  self.confidence, self.videos_directory_path)
         self.q = queue.Queue()
         self.gui = GUI(self.q)
         # Create a vertical layout to organize the widgets
@@ -285,7 +286,7 @@ class MyApp(QWidget):
         directory = QFileDialog.getExistingDirectory(
             self, "Select Directory", "", QFileDialog.ShowDirsOnly)
         if directory:
-            self.capture_thread.directory_path = directory
+            self.capture_thread.videos_directory_path = directory
 
     def start(self):
         self.capture_thread.stopped = False

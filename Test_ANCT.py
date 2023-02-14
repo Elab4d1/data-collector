@@ -22,7 +22,7 @@ class CaptureThread(QThread):
 
 
 class ScreenCapture:
-    def __init__(self, capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence):
+    def __init__(self, capture_method, interval, directory_path, image_limit, cfg_path, weights_path, data_path, num_threads, confidence, videos_directory_path):
         super().__init__()
         self.lock = threading.Lock()
         self.capture_methods = [
@@ -35,6 +35,7 @@ class ScreenCapture:
         self.interval = interval
         self.directory_path = directory_path
         self.image_limit = image_limit
+        self.videos_directory_path = videos_directory_path
         self.confidence = confidence
         self.size = (1920, 1080)
         self.random_size = (250, 1920, 1080)
@@ -44,6 +45,8 @@ class ScreenCapture:
         self.num_threads = num_threads
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.cfg_path = os.path.join(current_dir, "cfg/yolov4.cfg")
+        if not os.path.exists(self.videos_directory_path):
+            os.makedirs(self.videos_directory_path)
         if not os.path.exists("target"):
             os.makedirs("target")
         if not os.path.exists(cfg_path):
@@ -141,9 +144,9 @@ class ScreenCapture:
         count = 0
 
         videos = [f for f in os.listdir(
-            self.directory_path) if f.endswith('.mp4')]
+            self.videos_directory_path) if f.endswith('.mp4')]
         for video in videos:
-            f = os.path.join(self.directory_path, video)
+            f = os.path.join(self.videos_directory_path, video)
             # checking if it is a file
 
             if os.path.isfile(f):
